@@ -2,6 +2,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
@@ -96,7 +97,6 @@ def processar_periodo_completo(df_base, alvo):
 
 def plotar_grafico_full(y_real, y_pred, alvo):
     plt.close('all')
-    
     plt.figure(figsize=(16, 6))
     
     plt.plot(y_real.index, y_real.values, label='Real (Histórico)', color='gray', alpha=0.5, linewidth=0.8)
@@ -116,10 +116,40 @@ def plotar_grafico_full(y_real, y_pred, alvo):
     
     nome_limpo = alvo.replace('(', '').replace(')', '').replace('.', '')
     nome_arquivo = f"FullRange_{nome_limpo}.png"
-    
     plt.savefig(nome_arquivo, dpi=150)
-    print(f"    Gráfico salvo: {nome_arquivo}")
+    print(f"    Gráfico Macro salvo: {nome_arquivo}")
+    plt.close()
+
+def plotar_grafico_zoom(y_real, y_pred, alvo):
+
+    plt.close('all')
+    plt.figure(figsize=(14, 6))
     
+    limit = 168
+    y_r_zoom = y_real.iloc[:limit]
+    y_p_zoom = y_pred[:limit]
+    
+    plt.plot(y_r_zoom.index, y_r_zoom.values, label='Real', marker='.', linestyle='-', color='gray', alpha=0.6)
+    plt.plot(y_r_zoom.index, y_p_zoom, label='Modelo', marker='.', linestyle='--', color='blue')
+    
+    plt.title(f'Zoom Detalhado (1 Semana): {alvo} - Ciclos Horários')
+    plt.xlabel('Data e Hora')
+    
+    label_y = DICIONARIO_UNIDADES.get(alvo, 'Valor / Intensidade')
+    plt.ylabel(label_y)
+    
+    ax = plt.gca()
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m %H:%M'))
+    ax.xaxis.set_major_locator(mdates.HourLocator(interval=6))
+    plt.gcf().autofmt_xdate()
+    
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    nome_limpo = alvo.replace('(', '').replace(')', '').replace('.', '')
+    nome_arquivo = f"Zoom_{nome_limpo}.png"
+    plt.savefig(nome_arquivo, dpi=150)
+    print(f"    Gráfico Zoom salvo: {nome_arquivo}")
     plt.close()
 
 if __name__ == "__main__":
@@ -132,8 +162,9 @@ if __name__ == "__main__":
             
             if y_real is not None:
                 plotar_grafico_full(y_real, y_pred, alvo)
+                plotar_grafico_zoom(y_real, y_pred, alvo)
                 
-        print(f"\n--- SUCESSO! Gráficos gerados com as novas legendas. ---")
+        print(f"\n--- SUCESSO! Gráficos gerados (Versões Full e Zoom). ---")
         
     except FileNotFoundError:
         print(f"ERRO: O arquivo '{ARQUIVO_CSV}' não foi encontrado.")
